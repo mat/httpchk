@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-var checks = readChecksCSV()
-
 func main() {
 	http.HandleFunc("/", checkAndReport)
 	fmt.Println("Listening...")
@@ -25,19 +23,8 @@ func main() {
 	}
 }
 
-func readChecksCSV() []check {
-	path := os.Getenv("CHECKS_CSV")
-	if path == "" {
-		path = "checks.csv"
-	}
-
-	csvFile, e := os.Open(path)
-	defer csvFile.Close()
-	if e != nil {
-		panic(e)
-	}
-
-	csvReader := csv.NewReader(csvFile)
+func readChecksCSV(r io.ReadCloser) []check {
+	csvReader := csv.NewReader(r)
 	csvReader.TrimLeadingSpace = true
 	csvReader.LazyQuotes = true
 
@@ -67,13 +54,14 @@ func checkFromCSVFields(fields []string) check {
 	}
 }
 
-func runAllChecks() (allChecksOk bool, failures string, slowestCheck *check) {
+func runAllChecks(checks []check) (allChecksOk bool, failures string, slowestCheck *check) {
 	channel := make(chan check)
 	for _, check := range checks {
 		go runSingleCheck(check, channel)
 	}
 
 	allChecksOk = true
+
 	for i := 0; i < len(checks); i++ {
 		check := <-channel
 		if check.OK {
@@ -99,7 +87,23 @@ func checkAndReport(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	allChecksOk, failures, slowestCheck := runAllChecks()
+	checkURL := req.FormValue("checks")
+	if checkURL == "" {
+		errorMessage := "ERROR: checks parameter missing\n"
+		http.Error(res, errorMessage, http.StatusNotFound)
+		return
+	}
+
+	resp, err := http.Get(checkURL)
+	if err != nil {
+		errorMessage := "ERROR: Could not fetch checks CSV file\n"
+		http.Error(res, errorMessage, http.StatusServiceUnavailable)
+		return
+	}
+	defer resp.Body.Close()
+
+	checks := readChecksCSV(resp.Body)
+	allChecksOk, failures, slowestCheck := runAllChecks(checks)
 
 	if allChecksOk {
 		io.WriteString(res, fmt.Sprintf("%d checks OK\n", len(checks)))
