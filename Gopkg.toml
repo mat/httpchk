@@ -28,3 +28,8 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[metadata.heroku]
+  root-package = "github.com/mat/httpchk"
+  go-version = "go1.11.4"
+  install = [ "./..." ]
