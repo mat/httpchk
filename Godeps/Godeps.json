@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/mat/httpchk",
-	"GoVersion": "go1.9.2",
+	"GoVersion": "go1.11.4",
 	"Packages": [
 		"./..."
 	],
