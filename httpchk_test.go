@@ -10,11 +10,19 @@ import (
 	"testing"
 )
 
-func TestGetChecksWithMissingParam(t *testing.T) {
+func TestGetChecksWithMissingChecksParam(t *testing.T) {
 	resp := doRequest("GET", "/", emptyBody())
 
 	expectStatus(t, resp, 404)
 	expectBodyContains(t, resp, "ERROR: checks parameter missing")
+	expectHeader(t, resp, "Content-Type", "text/plain; charset=utf-8")
+}
+
+func TestGetChecksWithoutURL(t *testing.T) {
+	resp := doRequest("GET", "/?checks=not-a-URL", emptyBody())
+
+	expectStatus(t, resp, 503)
+	expectBodyContains(t, resp, "ERROR: Could not fetch checks CSV file")
 	expectHeader(t, resp, "Content-Type", "text/plain; charset=utf-8")
 }
 
