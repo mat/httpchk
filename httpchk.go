@@ -5,22 +5,33 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 func main() {
-	http.HandleFunc("/", checkAndReport)
-	fmt.Println("Listening...")
+	router := buildRouter()
+	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
 
-	err := http.ListenAndServe(":"+os.Getenv("PORT"), nil)
-	if err != nil {
-		panic(err)
-	}
+	port := os.Getenv("PORT")
+	addr := "0.0.0.0:" + port
+
+	// loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, router)
+	log.Fatal(http.ListenAndServe(addr, router))
+}
+
+func buildRouter() *httprouter.Router {
+	router := httprouter.New()
+	router.GET("/", checkAndReport)
+
+	return router
 }
 
 func readChecksCSV(r io.ReadCloser) []check {
@@ -79,15 +90,15 @@ func runAllChecks(checks []check) (allChecksOk bool, failures string, slowestChe
 	return allChecksOk, failures, slowestCheck
 }
 
-func checkAndReport(res http.ResponseWriter, req *http.Request) {
-	hoursParam := req.FormValue("hours")
+func checkAndReport(res http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	hoursParam := p.ByName("hours")
 	hours := strings.Split(hoursParam, ",")
 	if len(hoursParam) > 0 && !contains(hours, time.Now().Hour()) {
 		io.WriteString(res, fmt.Sprintf("%s\nnot running tests cause now is not the time (%d not included in hours=%v)\n", time.Now(), time.Now().Hour(), hours))
 		return
 	}
 
-	checkURL := req.FormValue("checks")
+	checkURL := p.ByName("checks")
 	if checkURL == "" {
 		errorMessage := "ERROR: checks parameter missing\n"
 		http.Error(res, errorMessage, http.StatusNotFound)
