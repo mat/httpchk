@@ -14,16 +14,28 @@ func TestGetChecksWithMissingChecksParam(t *testing.T) {
 	resp := doRequest("GET", "/", emptyBody())
 
 	expectStatus(t, resp, 404)
-	expectBodyContains(t, resp, "ERROR: checks parameter missing")
 	expectHeader(t, resp, "Content-Type", "text/plain; charset=utf-8")
+
+	expectBodyContains(t, resp, "ERROR: checks parameter missing")
 }
 
 func TestGetChecksWithoutURL(t *testing.T) {
 	resp := doRequest("GET", "/?checks=not-a-URL", emptyBody())
 
 	expectStatus(t, resp, 503)
-	expectBodyContains(t, resp, "ERROR: Could not fetch checks CSV file")
 	expectHeader(t, resp, "Content-Type", "text/plain; charset=utf-8")
+
+	expectBodyContains(t, resp, "ERROR: Could not fetch checks CSV file")
+}
+
+func TestGetTwoSimpleChecks(t *testing.T) {
+	resp := doRequest("GET", "/?checks=https://raw.githubusercontent.com/mat/httpchk/master/checks.csv", emptyBody())
+
+	expectStatus(t, resp, 200)
+	expectHeader(t, resp, "Content-Type", "text/plain; charset=utf-8")
+
+	expectBodyContains(t, resp, "2 checks OK")
+	expectBodyMatches(t, resp, "Slowest .*:.*ms")
 }
 
 func doRequest(method, uri string, body *bytes.Buffer) *httptest.ResponseRecorder {
@@ -62,6 +74,14 @@ func expectBodyContains(t *testing.T, resp *httptest.ResponseRecorder, expected 
 	if !strings.Contains(resp.Body.String(), expected) {
 		t.Errorf("wrong body: '%v' not contained in '%v'",
 			expected, resp.Body.String())
+	}
+}
+
+func expectBodyMatches(t *testing.T, resp *httptest.ResponseRecorder, expectedRegexp string) {
+	var regex = regexp.MustCompile(expectedRegexp)
+	body := resp.Body.String()
+	if !regex.MatchString(body) {
+		t.Errorf("wrong body: did not match regexp '%v': %v", expectedRegexp, body)
 	}
 }
 
