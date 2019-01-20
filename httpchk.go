@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -23,8 +24,8 @@ func main() {
 	port := os.Getenv("PORT")
 	addr := "0.0.0.0:" + port
 
-	// loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, router)
-	log.Fatal(http.ListenAndServe(addr, router))
+	loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, router)
+	log.Fatal(http.ListenAndServe(addr, loggedRouter))
 }
 
 func buildRouter() *httprouter.Router {
