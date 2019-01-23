@@ -1,0 +1,8 @@
+{
+	"name": "HTTP check service (httpchk)",
+	"description": "A http check service written in Go",
+	"repository": "https://github.com/mat/httpchk",
+	"website": "https://github.com/mat/httpchk",
+	"env": {
+	}
+}
