@@ -1,0 +1,11 @@
+# Exported from Render on 2024-11-27T18:17:29Z
+services:
+- type: web
+  name: httpchk
+  runtime: go
+  repo: https://github.com/mat/httpchk
+  plan: free
+  region: frankfurt
+  buildCommand: go build -tags netgo -ldflags '-s -w' -o app
+  startCommand: ./app
+version: "1"
