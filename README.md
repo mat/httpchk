@@ -13,7 +13,10 @@ This service runs multiple HTTP requests against a set of URLs and returns 200 o
 
 ## Hosting
 
-An easy way to host this service is to use Heroku, just go to <https://heroku.com/deploy> to get started.
+Simple options to host this service are, for example:
+
+- Render: <https://render.com/deploy?repo=https://github.com/mat/httpchk>
+- Heroku: <https://heroku.com/deploy>
 
 ## Heroku / Setup
 
