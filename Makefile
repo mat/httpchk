@@ -13,3 +13,9 @@ build_rasperrypi:
 
 build_linux_amd64:
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -installsuffix cgo -o bin/linux_amd64/httpchk .
+
+docker_build:
+	docker build -t httpchk .
+
+docker_run:
+	docker run -p 3000:3000 httpchk

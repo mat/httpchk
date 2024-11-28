@@ -23,3 +23,17 @@ Simple options to host this service are, for example:
 ```bash
 heroku labs:enable runtime-dyno-metadata
 ```
+
+## Docker
+
+Build the Docker image using
+
+```bash
+make docker_build
+```
+
+and run it with
+
+```bash
+make docker_run
+```
