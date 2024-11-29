@@ -1,6 +1,6 @@
 # HTTP checks (httpchk)
 
-[![Build Status](https://travis-ci.org/mat/httpchk.svg?branch=master)](https://travis-ci.org/mat/httpchk)
+[![Go Test](https://github.com/mat/httpchk/actions/workflows/name:%20tests.yml/badge.svg)](https://github.com/mat/httpchk/actions/workflows/name:%20tests.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mat/httpchk)](https://goreportcard.com/report/github.com/mat/httpchk)
 
 This service runs multiple HTTP requests against a set of URLs and returns 200 on success, 503 otherwise.
