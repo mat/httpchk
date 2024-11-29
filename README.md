@@ -8,7 +8,7 @@ This service runs multiple HTTP requests against a set of URLs and returns 200 o
 **Example**
 
 - Config: <https://github.com/mat/httpchk/blob/master/checks.csv>
-- Result: <https://httpchk-demo.herokuapp.com/?checks=https://raw.githubusercontent.com/mat/httpchk/master/checks.csv>
+- Result: <https://httpchk.onrender.com/?checks=https://raw.githubusercontent.com/mat/httpchk/master/checks.csv>
 
 
 ## Hosting
