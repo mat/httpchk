@@ -4,6 +4,7 @@ test:
 deploy:
 	git push heroku master
 	heroku config:set GIT_REVISION=`git describe --always` DEPLOYED_AT=`date +%s`
+	echo "Deployed to Heroku"
 
 run_server:
 	PORT=3000 go run .
