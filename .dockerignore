@@ -5,9 +5,6 @@ bin/
 # Vendor directory (if using Go modules)
 vendor/
 
-# Go modules
-go.mod
-go.sum
 
 # Temporary files
 *.tmp

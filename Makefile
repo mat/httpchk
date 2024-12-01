@@ -20,3 +20,7 @@ docker_build:
 
 docker_run:
 	docker run -p 3000:3000 httpchk
+
+docker_push_hub:
+	docker tag httpchk:latest matthiasluedtke/httpchk:latest
+	docker push matthiasluedtke/httpchk:latest
