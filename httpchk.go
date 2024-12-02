@@ -30,6 +30,7 @@ func main() {
 
 func buildRouter() *httprouter.Router {
 	router := httprouter.New()
+	router.GET("/up", upHandler)
 	router.GET("/", checkAndReport)
 
 	return router
@@ -189,4 +190,9 @@ func runSingleCheck(check check, channel chan check) {
 
 	check.runtime = time.Since(start)
 	channel <- check
+}
+
+// /up is a simple health check endpoint (used by kamal deploy)
+func upHandler(res http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	io.WriteString(res, "OK\n")
 }
