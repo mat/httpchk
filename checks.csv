@@ -1,2 +1,3 @@
-beti,             http://better-idea.org,                                                         "Hey, there!"
-www-beti,         http://www.better-idea.org,                                                     "Hey, there!"
+Name,        URI,                         Text
+beti,        http://better-idea.org,      "Hey, there!"
+www-beti,    http://www.better-idea.org,  "Hey, there!"
