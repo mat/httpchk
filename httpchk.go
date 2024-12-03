@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -14,26 +13,23 @@ import (
 	"time"
 
 	"github.com/gorilla/handlers"
-	"github.com/julienschmidt/httprouter"
 )
 
 func main() {
-	router := buildRouter()
-	router.ServeFiles("/static/*filepath", http.Dir("public/static/"))
+	mux := buildMux()
 
 	port := os.Getenv("PORT")
 	addr := "0.0.0.0:" + port
 
-	loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, router)
+	loggedRouter := handlers.CombinedLoggingHandler(os.Stdout, mux)
 	log.Fatal(http.ListenAndServe(addr, loggedRouter))
 }
 
-func buildRouter() *httprouter.Router {
-	router := httprouter.New()
-	router.GET("/up", upHandler)
-	router.GET("/", checkAndReport)
-
-	return router
+func buildMux() *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/up", upHandler)
+	mux.HandleFunc("/", checkAndReport)
+	return mux
 }
 
 func readChecksCSV(r io.ReadCloser) []check {
@@ -92,7 +88,7 @@ func runAllChecks(checks []check) (allChecksOk bool, failures string, slowestChe
 	return allChecksOk, failures, slowestCheck
 }
 
-func checkAndReport(res http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func checkAndReport(res http.ResponseWriter, r *http.Request) {
 	hoursParam := r.FormValue("hours")
 	hours := strings.Split(hoursParam, ",")
 	if len(hoursParam) > 0 && !contains(hours, time.Now().Hour()) {
@@ -180,7 +176,7 @@ func runSingleCheck(check check, channel chan check) {
 		}
 
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		bodyText := string(body)
 
 		if (err == nil) && strings.Contains(bodyText, check.ExpectedText) {
@@ -193,6 +189,6 @@ func runSingleCheck(check check, channel chan check) {
 }
 
 // /up is a simple health check endpoint (used by kamal deploy)
-func upHandler(res http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func upHandler(res http.ResponseWriter, r *http.Request) {
 	io.WriteString(res, "OK\n")
 }

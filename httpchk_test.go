@@ -52,8 +52,8 @@ func doRequestWithHeader(method, uri string, body *bytes.Buffer, header *http.He
 		req.Header = *header
 	}
 
-	router := buildRouter()
-	router.ServeHTTP(resp, req)
+	mux := buildMux()
+	mux.ServeHTTP(resp, req)
 	return resp
 }
 
