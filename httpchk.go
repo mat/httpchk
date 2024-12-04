@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -48,7 +49,10 @@ func readChecksCSV(r io.ReadCloser) []check {
 		}
 
 		check := checkFromCSVFields(fields)
-		result = append(result, check)
+		// Ignore invalid URLs (like in the header row)
+		if isURL(check.URL) {
+			result = append(result, check)
+		}
 	}
 
 	fmt.Printf("Read %d checks from CSV.\n", len(result))
@@ -61,6 +65,16 @@ func checkFromCSVFields(fields []string) check {
 		URL:          fields[1],
 		ExpectedText: fields[2],
 	}
+}
+
+func isURL(s string) bool {
+	hasHttpPrefix := strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
+	if !hasHttpPrefix {
+		return false
+	}
+
+	_, err := url.Parse(s)
+	return err == nil
 }
 
 func runAllChecks(checks []check) (allChecksOk bool, failures string, slowestCheck *check) {
