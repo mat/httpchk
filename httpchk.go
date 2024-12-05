@@ -103,13 +103,6 @@ func runAllChecks(checks []check) (allChecksOk bool, failures string, slowestChe
 }
 
 func checkAndReport(res http.ResponseWriter, r *http.Request) {
-	hoursParam := r.FormValue("hours")
-	hours := strings.Split(hoursParam, ",")
-	if len(hoursParam) > 0 && !contains(hours, time.Now().Hour()) {
-		io.WriteString(res, fmt.Sprintf("%s\nnot running tests cause now is not the time (%d not included in hours=%v)\n", time.Now(), time.Now().Hour(), hours))
-		return
-	}
-
 	checkURL := r.FormValue("checks")
 	if checkURL == "" {
 		errorMessage := "ERROR: checks parameter missing\n"
