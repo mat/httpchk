@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetChecksWithMissingChecksParam(t *testing.T) {
-	resp := doRequest("GET", "/", emptyBody())
+	resp := doRequest("GET", "/check.txt", emptyBody())
 
 	expectStatus(t, resp, 404)
 	expectHeader(t, resp, "Content-Type", "text/plain; charset=utf-8")
@@ -20,7 +20,7 @@ func TestGetChecksWithMissingChecksParam(t *testing.T) {
 }
 
 func TestGetChecksWithoutURL(t *testing.T) {
-	resp := doRequest("GET", "/?checks=not-a-URL", emptyBody())
+	resp := doRequest("GET", "/check.txt?checks=not-a-URL", emptyBody())
 
 	expectStatus(t, resp, 503)
 	expectHeader(t, resp, "Content-Type", "text/plain; charset=utf-8")
@@ -29,7 +29,7 @@ func TestGetChecksWithoutURL(t *testing.T) {
 }
 
 func TestGetTwoSimpleChecks(t *testing.T) {
-	resp := doRequest("GET", "/?checks=https://raw.githubusercontent.com/mat/httpchk/master/checks.csv", emptyBody())
+	resp := doRequest("GET", "/check.txt?checks=https://raw.githubusercontent.com/mat/httpchk/master/checks.csv", emptyBody())
 
 	expectStatus(t, resp, 200)
 	expectHeader(t, resp, "Content-Type", "text/plain; charset=utf-8")

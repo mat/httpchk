@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css" />
+    <title>httpchk - simple HTTP checks</title>
+  </head>
+  <style>
+    /* :root {
+  --accent: blue;
+} */
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table tr:last-child td,
+    table tr:last-child th {
+      text-align: center;
+      font-weight: bold;
+    }
+
+    /* last column with status symbol */
+    table tr td:last-child {
+      text-align: center;
+    }
+
+    /* second column with URI, monospace font */
+    table tr td:nth-child(2) {
+      width: 50%;
+      font-family: monospace;
+    }
+
+    /* third column with text, monospace */
+    table tr td:nth-child(3) {
+      font-family: monospace;
+    }
+
+    /* Center form */
+    form {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    /* submit button should be below input field */
+    form div {
+      display: flex;
+      flex-direction: column;
+    }
+
+    form input {
+      padding: 0.5rem;
+      margin-right: 0.5rem; /* Add margin to the right of the input field */
+    }
+    /* button should have some space around */
+    form button {
+      padding: 0.5rem 1rem;
+    }
+  </style>
+  <body>
+    <header>
+      <h1><a href=".">httpchk</a></h1>
+      <p>Simple HTTP check service</p>
+    </header>
+
+    <main>
+      <p>
+        Run simple HTTP GETs against a set of URL, optionally check for some
+        text in the page.
+      </p>
+
+      <mark>Checks</mark> are defined in the following CSV format:
+
+      <pre>
+Name,URI,Text
+Check 1,http://example.com,"Example Domain"
+Check 2,http://example.com,"Example Domain"
+</pre
+      >
+
+      where
+      <ul>
+        <li><strong>Name</strong> is a descriptive name for the check</li>
+        <li><strong>URI</strong> is the URL to check</li>
+        <li>
+          <strong>Text</strong> is an optional string to look for in the
+          response
+        </li>
+      </ul>
+
+      <h3>Try it out</h3>
+
+      <p>
+        Example checks file:
+        <a href="https://github.com/mat/httpchk/raw/refs/heads/main/checks.csv"
+          >checks.csv</a
+        >
+      </p>
+
+      <!-- Form with a single input field with description and a submit button -->
+      <form action="/check" method="get">
+        <input
+          type="url"
+          id="checks"
+          name="checks"
+          placeholder="URL to checks.csv"
+          size="40"
+          required
+          value=""
+        />
+        <button type="submit">Run checks</button>
+      </form>
+    </main>
+    <footer>
+      <p>
+        httpchk by <a href="http://better-idea.org">Matthias Lüdtke</a> &mdash;
+        source on <a href="https://github.com/mat/httpchk">GitHub</a>
+      </p>
+    </footer>
+  </body>
+</html>

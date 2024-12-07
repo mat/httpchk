@@ -3,18 +3,22 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
 )
+
+var checkTemplate = template.Must(template.ParseFiles("templates/check.html"))
 
 func main() {
 	mux := buildMux()
@@ -28,8 +32,10 @@ func main() {
 
 func buildMux() *http.ServeMux {
 	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir("./static")))
 	mux.HandleFunc("/up", upHandler)
-	mux.HandleFunc("/", checkAndReport)
+	mux.HandleFunc("/check", checkAndReportHTML)
+	mux.HandleFunc("/check.txt", checkAndReport)
 	return mux
 }
 
@@ -77,29 +83,106 @@ func isURL(s string) bool {
 	return err == nil
 }
 
-func runAllChecks(checks []check) (allChecksOk bool, failures string, slowestCheck *check) {
+// CheckResult contains an array of checks and helper function to return
+// - the number of passed checks
+// - allChecksOk is true if all checks passed
+// - the slowest check
+// - list of failed checks
+type CheckResult struct {
+	Checks []check
+}
+
+func (cr *CheckResult) SortChecks() {
+	// sort Checks by ID (ascending)
+	slices.SortFunc(cr.Checks, func(a, b check) int {
+		return strings.Compare(strings.ToLower(a.ID), strings.ToLower(b.ID))
+	})
+}
+
+func (cr *CheckResult) PassedChecks() int {
+	passedChecks := 0
+	for _, check := range cr.Checks {
+		if check.OK {
+			passedChecks++
+		}
+	}
+	return passedChecks
+}
+func (cr *CheckResult) AllChecksOk() bool {
+	return cr.PassedChecks() == len(cr.Checks)
+}
+func (cr *CheckResult) SlowestCheck() *check {
+	slowestCheck := cr.Checks[0]
+	for _, check := range cr.Checks {
+		if check.runtime > slowestCheck.runtime {
+			slowestCheck = check
+		}
+	}
+	return &slowestCheck
+}
+func (cr *CheckResult) FailedChecks() []check {
+	var failedChecks []check
+	for _, check := range cr.Checks {
+		if !check.OK {
+			failedChecks = append(failedChecks, check)
+		}
+	}
+	return failedChecks
+}
+
+func runAllChecks(checks []check) CheckResult {
 	channel := make(chan check)
 	for _, check := range checks {
 		go runSingleCheck(check, channel)
 	}
 
-	allChecksOk = true
-
+	result := make([]check, len(checks))
 	for i := 0; i < len(checks); i++ {
 		check := <-channel
-		if check.OK {
-			fmt.Printf("Returned in %v: %s ok.\n", check.runtime, check.URL)
-		} else {
-			fmt.Fprintf(os.Stderr, "FAILED after %v: %s\n", check.runtime, check.URL)
-		}
-		if !check.OK {
-			allChecksOk = false
-			failures = failures + check.URL + "\n"
-		}
-		slowestCheck = &check
+		result[i] = check
 	}
 
-	return allChecksOk, failures, slowestCheck
+	return CheckResult{Checks: result}
+}
+
+type ResultPageData struct {
+	ErrorMessage string
+	Checks       []check
+
+	PassedChecks int
+	TotalChecks  int
+}
+
+func checkAndReportHTML(res http.ResponseWriter, r *http.Request) {
+	checkURL := r.FormValue("checks")
+	if checkURL == "" {
+		errorMessage := "ERROR: checks parameter missing\n"
+		checkTemplate.Execute(res, ResultPageData{ErrorMessage: errorMessage})
+		return
+	}
+
+	resp, err := http.Get(checkURL)
+	if err != nil {
+		errorMessage := "ERROR: Could not fetch checks CSV file\n"
+		checkTemplate.Execute(res, ResultPageData{ErrorMessage: errorMessage})
+		return
+	}
+	defer resp.Body.Close()
+
+	checks := readChecksCSV(resp.Body)
+	result := runAllChecks(checks)
+	result.SortChecks()
+
+	page := ResultPageData{
+		Checks:       result.Checks,
+		PassedChecks: result.PassedChecks(),
+		TotalChecks:  len(checks),
+	}
+
+	err = checkTemplate.Execute(res, page)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func checkAndReport(res http.ResponseWriter, r *http.Request) {
@@ -119,7 +202,9 @@ func checkAndReport(res http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	checks := readChecksCSV(resp.Body)
-	allChecksOk, failures, slowestCheck := runAllChecks(checks)
+	result := runAllChecks(checks)
+	allChecksOk := result.AllChecksOk()
+	slowestCheck := result.SlowestCheck()
 
 	if allChecksOk {
 		io.WriteString(res, fmt.Sprintf("%d checks OK\n", len(checks)))
@@ -128,7 +213,13 @@ func checkAndReport(res http.ResponseWriter, r *http.Request) {
 		message := fmt.Sprintf("Slowest %s:%v", slowestCheck.ID, slowestCheck.runtime)
 		io.WriteString(res, message)
 	} else {
-		errorMessage := "ERROR: \n" + failures
+		failures := result.FailedChecks()
+		// Concatenate all URLs of failed checks
+		var failedURLs []string
+		for _, check := range failures {
+			failedURLs = append(failedURLs, check.URL)
+		}
+		errorMessage := "ERROR: \n" + strings.Join(failedURLs, "\n")
 		http.Error(res, errorMessage, http.StatusServiceUnavailable)
 	}
 }
@@ -192,6 +283,7 @@ func runSingleCheck(check check, channel chan check) {
 	}
 
 	check.runtime = time.Since(start)
+	fmt.Printf("Check completed: %v+\n", check)
 	channel <- check
 }
 
